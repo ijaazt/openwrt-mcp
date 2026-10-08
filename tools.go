@@ -308,6 +308,7 @@ type logreadIn struct {
 // and can never be spoofed by a tool argument or a self-asserted clientInfo.name.
 func (s *Server) newServerForClient(client string) *mcp.Server {
 	srv := mcp.NewServer(&mcp.Implementation{Name: "openwrt-mcp", Version: version}, nil)
+	registerCardResource(srv)
 
 	addTool(s, srv, client, "ubus_list",
 		"List ubus objects and their methods with argument signatures. This is the discovery tool: "+
@@ -472,7 +473,8 @@ func addTool[In any](s *Server, srv *mcp.Server, client, name, desc string,
 	scopeOf func(In) []string,
 	fn func(context.Context, In) (string, string, error),
 ) {
-	mcp.AddTool(srv, &mcp.Tool{Name: name, Description: desc},
+	mcp.AddTool(srv, &mcp.Tool{Name: name, Title: cardTitle(name), Description: desc,
+		Meta: cardToolMeta(), Annotations: cardAnnotations(name)},
 		func(ctx context.Context, _ *mcp.CallToolRequest, in In) (*mcp.CallToolResult, any, error) {
 			started := time.Now()
 			scopes := scopeOf(in)
@@ -487,6 +489,7 @@ func addTool[In any](s *Server, srv *mcp.Server, client, name, desc string,
 				ev.Outcome, ev.Summary, ev.Error = outcome, summary, errMsg
 				ev.Duration = time.Since(started).Milliseconds()
 				s.audit.Record(ev)
+				attachOperationCard(res, name, in, scopes, outcome, summary, ev.Duration)
 				return res, nil, nil
 			}
 

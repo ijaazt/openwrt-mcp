@@ -1,0 +1,17 @@
+{
+  "name": "openwrt-mcp-cards",
+  "version": "0.5.1-cards.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:ui": "node scripts/build-ui.js",
+    "check:ui": "node --check ui/card.js",
+    "test:ui": "python3 scripts/verify-ui.py"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/ext-apps": "2.0.3"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2"
+  }
+}

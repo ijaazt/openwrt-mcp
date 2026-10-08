@@ -1,8 +1,23 @@
-# openwrt-mcp
+# openwrt-mcp — operation cards
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/GlassOnTin/openwrt-mcp)](https://github.com/GlassOnTin/openwrt-mcp/releases)
 [![ko-fi](https://img.shields.io/badge/Ko--fi-support-ff5e5b?logo=ko-fi&logoColor=white)](https://ko-fi.com/glassontin)
+
+This fork of [GlassOnTin/openwrt-mcp](https://github.com/GlassOnTin/openwrt-mcp) adds
+embedded MCP Apps cards to **all nine operations**, while preserving the upstream
+permission checks, audit trail, rollback mechanism and plain-text results.
+
+The cards show router status, configuration tables, DHCP leases, logs, requested
+changes and rollback countdowns. Error and permission-denied results have their
+own cards. Diagnostic cards can refresh; change cards can inspect current settings.
+Neither control repeats or confirms a write. Credentials are redacted from card
+payloads. See [card development and verification](docs/operation-cards.md).
+
+The static ARMv7 build has also been exercised on a Linksys WHW03 running stock
+OpenWrt 25.12.5 with an SSH forward and a private outbound tunnel. The `ipk` package
+still targets `opkg`; on `apk` systems install the static binary and procd files.
+GL.iNet-specific WireGuard tools still require GL.iNet firmware.
 
 An MCP server that runs **on** an OpenWrt router, so Claude Code (or any MCP client) can
 inspect and change it over an SSH tunnel.
@@ -10,7 +25,7 @@ inspect and change it over an SSH tunnel.
 Developed against **GL.iNet** routers — verified on a Flint 2, a Flint 4 (GL-BE14000,
 firmware 4.9.0, router mode) and a Slate 7 Pro (GL-BE10000, firmware 4.8.4, AP mode).
 GL.iNet firmware 4.x is OpenWrt 21.02 with `opkg`, which is what the `.ipk` targets. It
-should suit any `opkg`-based OpenWrt; stock OpenWrt 24.10+ moved to `apk` and is **untested**.
+should suit any `opkg`-based OpenWrt; the `.ipk` is not intended for stock OpenWrt systems using `apk`.
 
 The other OpenWrt MCP servers I could find run *off*-router — they SSH in from your
 workstation on every call. This one is resident: a single static Go binary under procd,
