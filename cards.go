@@ -11,7 +11,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-const cardURI = "ui://openwrt/operation-card-v2.html"
+const cardURI = "ui://openwrt/operation-card-v3.html"
 
 // Embedded at compile time: no Node runtime, external assets or credentials on the router.
 //

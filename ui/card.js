@@ -1,4 +1,4 @@
-import { App } from '@modelcontextprotocol/ext-apps';
+import { App, applyHostStyleVariables, applyDocumentTheme } from '@modelcontextprotocol/ext-apps';
 const app = new App({ name: 'OpenWrt operation cards', version: '1.0.0' }, { availableDisplayModes: ['inline'] }, { autoResize: false });
 const root = document.querySelector('#card');
 let current, countdown;
@@ -51,7 +51,8 @@ function render(result) {
   if(!c){error(result?.content?.filter(x=>x.type==='text').map(x=>x.text).join('\n')||'No operation card was returned.');return;}
   current=c;clearInterval(countdown);root.replaceChildren();
   const pending=Boolean(c.rollback_deadline)&&c.outcome==='OK'; const status=c.outcome==='DENIED'?'denied':c.outcome==='ERROR'?'error':pending?'pending':'ok';
-  const header=el('header'), mark=el('div','◉','mark'), heading=el('div',null,'heading');
+  const header=el('header'), mark=el('div',null,'mark'), heading=el('div',null,'heading');
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 24 24');svg.setAttribute('fill','none');svg.setAttribute('stroke','currentColor');svg.setAttribute('stroke-width','1.6');svg.setAttribute('aria-hidden','true');const path=document.createElementNS(svg.namespaceURI,'path');path.setAttribute('d','M4 8a12 12 0 0 1 16 0M7 11a7.5 7.5 0 0 1 10 0M10 14a3 3 0 0 1 4 0M5 17h14a2 2 0 0 1 2 2v1H3v-1a2 2 0 0 1 2-2Z M7 19h1M11 19h1');svg.append(path);mark.append(svg);
   heading.append(el('h1',c.title),el('p',(c.scope||[]).join(' · ')||c.tool,'scope'));header.append(mark,heading,el('span',status==='ok'?'Complete':status==='pending'?'Rollback armed':status==='denied'?'Access denied':'Error',`badge ${status}`));root.append(header);
   if(status==='error'||status==='denied') {
     const banner=el('div',null,`banner ${status}`);banner.append(el('strong',status==='denied'?'This operation is not permitted':'The operation did not complete'),el('p',c.details));root.append(banner);
@@ -70,7 +71,7 @@ function render(result) {
   if(action){const button=el('button',c.refresh?'Refresh':'Inspect current settings');button.onclick=async()=>{button.disabled=true;try{render(await app.callServerTool(action));}catch{error('Read failed. This snapshot is unchanged. No write was repeated.');}finally{button.disabled=false;}};footer.append(button);}
   const date=new Date(c.observed_at);footer.append(el('small',`Snapshot ${Number.isNaN(date.valueOf())?'just now':date.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})} · ${c.duration_ms??0} ms`));root.append(footer);
 }
-const theme=context=>{if(context?.theme)document.documentElement.dataset.theme=context.theme;};
+const theme=context=>{if(context?.theme)applyDocumentTheme(context.theme);if(context?.styles?.variables)applyHostStyleVariables(context.styles.variables);};
 app.ontoolresult=render;app.ontoolcancelled=()=>error('Operation cancelled. Check current settings before retrying a write.');app.onhostcontextchanged=theme;
 // The initial tool result is delivered by the host; never call the tool on startup.
 if(window.openai?.toolOutput)render({structuredContent:window.openai.toolOutput});

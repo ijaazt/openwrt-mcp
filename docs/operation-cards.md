@@ -1,7 +1,7 @@
 # Operation cards
 
 This fork embeds one self-contained MCP Apps resource in the Go executable:
-`ui://openwrt/operation-card-v2.html`. All nine tools advertise it through standard
+`ui://openwrt/operation-card-v3.html`. All nine tools advertise it through standard
 `_meta.ui.resourceUri` and ChatGPT output-template metadata. Successful, denied and
 handler-error results include a structured `card` payload and preserve upstream
 text content. Protocol-level validation errors can occur before a handler runs.
@@ -52,7 +52,7 @@ go test -race ./...
 python3 -m venv .venv
 .venv/bin/pip install playwright
 .venv/bin/playwright install chromium
-.venv/bin/python scripts/verify-ui.py
+.venv/bin/python scripts/verify-mobile.py
 ```
 
 The browser verifier uses an isolated MCP Apps host with fixtures for all nine
@@ -66,3 +66,21 @@ Test representative cards in the actual client after deployment and refresh its
 tool catalog if cached. Do not widen router permissions merely to exercise cards
 for disabled operations. Router credentials, private deployment records and tunnel
 configuration belong outside version control; `/deploy` is ignored in this fork.
+
+Cards use MCP Apps host typography and color variables when available, with
+ChatGPT-style neutral light/dark fallbacks. All read controls and output toggles
+have at least 44-pixel touch targets. The mobile suite covers 320, 375, 390, 430
+and 844-pixel viewports with touch emulation, both themes, expanded output,
+read controls, host style changes and horizontal overflow checks (110 cases).
+
+## Host integration
+
+The server advertises inline as the available/preferred display mode. The card
+requests no fullscreen mode and reports its content height through MCP Apps.
+On initialization and each host-context change, it applies the host’s CSS color,
+font and radius variables and theme. Layout uses responsive intrinsic sizes;
+there are no selectors into ChatGPT’s private DOM or version-specific UI hooks.
+Tests simulate changed host colors and typography to check that the card follows
+them. Neutral fallbacks remain for hosts that omit style variables. Future host
+breaking changes cannot be guaranteed; client integration still needs periodic
+verification.
