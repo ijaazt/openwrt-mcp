@@ -1,7 +1,7 @@
 # Operation cards
 
 This fork embeds one self-contained MCP Apps resource in the Go executable:
-`ui://openwrt/operation-card-v1.html`. All nine tools advertise it through standard
+`ui://openwrt/operation-card-v2.html`. All nine tools advertise it through standard
 `_meta.ui.resourceUri` and ChatGPT output-template metadata. Successful, denied and
 handler-error results include a structured `card` payload and preserve upstream
 text content. Protocol-level validation errors can occur before a handler runs.
@@ -27,6 +27,12 @@ assets. UCI credential options, JSON credential fields, confirmation tokens and
 TOTP codes are redacted from structured card payloads. Existing text output is
 preserved for upstream compatibility and can still contain sensitive credentials;
 treat it accordingly. The upstream policy remains the authority for every call.
+
+`show_operation_card` is an additional read-only viewer for the most recent sanitized
+result of an operation. It preserves the original outcome, but retrieval itself
+succeeds so hosts that hide tool-error widgets can show the denial/error card.
+Results are isolated by authenticated client and expire after five minutes or a
+server restart. It never repeats an operation.
 
 A rollback countdown describes a deadline, not a verified rollback. Inspect after
 it expires. Upstream snapshots live in `/tmp`: daemon restarts preserve them, but a

@@ -18,6 +18,9 @@ import (
 )
 
 type Server struct {
+	cardMu sync.RWMutex
+	cards  map[string]map[string]operationCard
+
 	configPath string
 	statePath  string
 	audit      *Auditor

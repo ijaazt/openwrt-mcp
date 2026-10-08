@@ -1,5 +1,5 @@
 import { App } from '@modelcontextprotocol/ext-apps';
-const app = new App({ name: 'OpenWrt operation cards', version: '1.0.0' }, { availableDisplayModes: ['inline'] });
+const app = new App({ name: 'OpenWrt operation cards', version: '1.0.0' }, { availableDisplayModes: ['inline'] }, { autoResize: false });
 const root = document.querySelector('#card');
 let current, countdown;
 const el = (tag, text, cls) => { const node = document.createElement(tag); if (text != null) node.textContent = String(text); if (cls) node.className = cls; return node; };
@@ -75,4 +75,4 @@ app.ontoolresult=render;app.ontoolcancelled=()=>error('Operation cancelled. Chec
 // The initial tool result is delivered by the host; never call the tool on startup.
 if(window.openai?.toolOutput)render({structuredContent:window.openai.toolOutput});
 window.addEventListener('openai:set_globals',event=>{const output=event.detail?.globals?.toolOutput;if(output)render({structuredContent:output});});
-app.connect().then(()=>theme(app.getHostContext())).catch(()=>{if(!current)error('This card needs a connected MCP Apps host.');});
+app.connect().then(()=>{theme(app.getHostContext());const report=()=>app.sendSizeChanged({height:Math.ceil(root.getBoundingClientRect().height)}).catch(()=>{});new ResizeObserver(report).observe(root);report();}).catch(()=>{if(!current)error('This card needs a connected MCP Apps host.');});

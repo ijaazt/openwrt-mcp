@@ -11,7 +11,7 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-const cardURI = "ui://openwrt/operation-card-v1.html"
+const cardURI = "ui://openwrt/operation-card-v2.html"
 
 // Embedded at compile time: no Node runtime, external assets or credentials on the router.
 //
@@ -222,4 +222,49 @@ func attachOperationCard(result *mcp.CallToolResult, name string, input any, sco
 	}
 	result.StructuredContent = map[string]any{"card": card}
 	result.Meta = cardToolMeta()
+}
+
+// Store only sanitized cards, never original text/credentials. A client can view
+// its own result for five minutes. Retrieval succeeds even when that operation
+// was denied, allowing hosts that suppress error widgets to show the denial.
+func (s *Server) rememberCard(client string, result *mcp.CallToolResult) {
+	card := result.StructuredContent.(map[string]any)["card"].(operationCard)
+	s.cardMu.Lock()
+	defer s.cardMu.Unlock()
+	if s.cards == nil {
+		s.cards = map[string]map[string]operationCard{}
+	}
+	if s.cards[client] == nil {
+		s.cards[client] = map[string]operationCard{}
+	}
+	s.cards[client][card.Tool] = card
+}
+
+type savedCardIn struct {
+	Tool string `json:"tool" jsonschema:"operation name whose most recent result should be shown, e.g. exec or uci_apply"`
+}
+
+func (s *Server) savedCard(client, tool string) *mcp.CallToolResult {
+	s.cardMu.RLock()
+	card, ok := s.cards[client][tool]
+	s.cardMu.RUnlock()
+	observed, err := time.Parse(time.RFC3339, card.ObservedAt)
+	if !ok || err != nil || time.Since(observed) > 5*time.Minute {
+		card = operationCard{Tool: tool, Title: "Saved operation result", Outcome: OutcomeError,
+			ObservedAt: nowISO(), Details: "No recent result is available for this client and operation. Results expire after five minutes or a server restart."}
+	}
+	return &mcp.CallToolResult{Content: []mcp.Content{&mcp.TextContent{Text: card.Details}},
+		StructuredContent: map[string]any{"card": card}, Meta: cardToolMeta()}
+}
+
+func (s *Server) registerSavedCardTool(srv *mcp.Server, client string) {
+	destructive, open := false, false
+	mcp.AddTool(srv, &mcp.Tool{Name: "show_operation_card", Title: "Saved operation result",
+		Description: "Display the most recent sanitized card for one of this client's router operations. Use after an error or permission denial when the host did not render the original card. The original outcome remains visible. This only reads an in-memory result (expires in five minutes); it never repeats or confirms an operation and cannot access another client's results.",
+		Meta:        cardToolMeta(), Annotations: &mcp.ToolAnnotations{ReadOnlyHint: true, IdempotentHint: true, DestructiveHint: &destructive, OpenWorldHint: &open}},
+		func(_ context.Context, _ *mcp.CallToolRequest, in savedCardIn) (*mcp.CallToolResult, any, error) {
+			result := s.savedCard(client, in.Tool)
+			s.audit.Record(AuditEvent{Time: nowISO(), Client: client, Tool: "show_operation_card", Scope: in.Tool, Outcome: OutcomeOK, Summary: "view saved card"})
+			return result, nil, nil
+		})
 }

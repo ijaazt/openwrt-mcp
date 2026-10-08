@@ -107,7 +107,7 @@ func TestCardsSurviveMCPWireAndResources(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(catalog.Tools) != 9 {
+	if len(catalog.Tools) != 10 {
 		t.Fatal("unexpected tool count", len(catalog.Tools))
 	}
 	for _, tool := range catalog.Tools {
@@ -138,5 +138,23 @@ func TestCardsSurviveMCPWireAndResources(t *testing.T) {
 	}
 	if len(resource.Contents) != 1 || !strings.Contains(resource.Contents[0].Text, "OpenWrt operation") || resource.Contents[0].MIMEType != "text/html;profile=mcp-app" {
 		t.Fatal("missing bundled resource")
+	}
+}
+
+func TestSavedCardIsolationAndErrorDisplay(t *testing.T) {
+	s := &Server{}
+	r := errResult("denied: no grant")
+	attachOperationCard(r, "exec", execIn{Argv: []string{"true"}}, nil, OutcomeDenied, "", 1)
+	s.rememberCard("alice", r)
+	shown := s.savedCard("alice", "exec")
+	if shown.IsError || shown.StructuredContent.(map[string]any)["card"].(operationCard).Outcome != OutcomeDenied {
+		t.Fatal("denied operation cannot be displayed")
+	}
+	if s.savedCard("bob", "exec").StructuredContent.(map[string]any)["card"].(operationCard).Outcome != OutcomeError {
+		t.Fatal("cross-client result leak")
+	}
+	s.cards["alice"]["exec"] = operationCard{Tool: "exec", ObservedAt: time.Now().Add(-6 * time.Minute).Format(time.RFC3339)}
+	if s.savedCard("alice", "exec").StructuredContent.(map[string]any)["card"].(operationCard).Outcome != OutcomeError {
+		t.Fatal("expired result shown")
 	}
 }

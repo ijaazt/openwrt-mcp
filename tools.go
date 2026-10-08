@@ -309,6 +309,7 @@ type logreadIn struct {
 func (s *Server) newServerForClient(client string) *mcp.Server {
 	srv := mcp.NewServer(&mcp.Implementation{Name: "openwrt-mcp", Version: version}, nil)
 	registerCardResource(srv)
+	s.registerSavedCardTool(srv, client)
 
 	addTool(s, srv, client, "ubus_list",
 		"List ubus objects and their methods with argument signatures. This is the discovery tool: "+
@@ -490,6 +491,7 @@ func addTool[In any](s *Server, srv *mcp.Server, client, name, desc string,
 				ev.Duration = time.Since(started).Milliseconds()
 				s.audit.Record(ev)
 				attachOperationCard(res, name, in, scopes, outcome, summary, ev.Duration)
+				s.rememberCard(client, res)
 				return res, nil, nil
 			}
 

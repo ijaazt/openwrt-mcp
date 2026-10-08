@@ -54,6 +54,7 @@ with sync_playwright() as p:
     page.evaluate("()=>document.querySelector('iframe').contentWindow.postMessage({jsonrpc:'2.0',method:'ui/notifications/host-context-changed',params:{theme:'dark'}},'*')")
     frame.wait_for_function("document.documentElement.dataset.theme==='dark'")
     page.screenshot(path=str(out/'dark.png'))
+    page.wait_for_function("requests.some(r=>r.method==='ui/notifications/size-changed'&&r.params.height<900)")
     assert not failures, failures
     browser.close()
 print(json.dumps({'result':'PASS','cards':len(fixtures),'checks':['SDK handshake','all nine operations','errors and denials','read-only refresh','mutation not replayed','escaping','mobile width','dark theme']}))

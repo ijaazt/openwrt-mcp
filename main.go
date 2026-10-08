@@ -16,7 +16,7 @@ import (
 //
 // Released under the MIT Licence. See the LICENSE file.
 
-var version = "0.5.1-cards.1"
+var version = "0.5.1-cards.2"
 
 const sourceURL = "https://github.com/ijaazt/openwrt-mcp"
 
